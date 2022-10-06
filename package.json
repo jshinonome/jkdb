@@ -1,0 +1,37 @@
+{
+  "name": "jkdb",
+  "version": "1.0.0",
+  "description": "javascript interface for kdb+/q",
+  "keywords": [
+    "q",
+    "kx",
+    "kdb+"
+  ],
+  "main": "jkdb.min.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "jest --testPathPattern=ipc",
+    "integration": "jest --testPathPattern=integration",
+    "babel": "babel src -d dist",
+    "typed": "npx tsc",
+    "clean": "rm ./*.d.ts jkdb*",
+    "build": "yarn test && yarn clean ; yarn typed && rollup --config && yarn pack"
+  },
+  "author": "Jo Shinonome",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.18.9",
+    "@babel/preset-env": "^7.19.3",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@types/node": "^18.8.1",
+    "babel-jest": "^29.1.2",
+    "eslint": "^8.24.0",
+    "eslint-plugin-jest": "^27.1.0",
+    "esm": "^3.2.25",
+    "jest": "^29.1.2",
+    "rollup": "^2.79.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "typescript": "^4.8.4"
+  }
+}

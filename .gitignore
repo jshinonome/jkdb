@@ -1,0 +1,9 @@
+.vscode
+*.d.ts
+jkdb-v1.0.0.tgz
+jkdb.min.js
+local
+node_modules
+package-lock.json
+package-lock.json
+yarn.lock
