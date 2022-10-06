@@ -18,6 +18,10 @@
     "build": "yarn test && yarn clean ; yarn typed && rollup --config && yarn pack"
   },
   "author": "Jo Shinonome",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jshinonome/jkdb"
+  },
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/core": "^7.19.3",
