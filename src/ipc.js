@@ -744,7 +744,8 @@ function serialize(obj) {
       case 14:
         obj.forEach(d => {
           if (d) {
-            const days = Math.floor((d.getTime() - 946684800000) / 86400000);
+            const days = (d.getTime() - MS_DIFF) / 86400000;
+            // auto truncate here
             buffer.writeInt32LE(days, offset);
           } else {
             buffer.writeInt32LE(INT_NULL, offset);
@@ -756,7 +757,7 @@ function serialize(obj) {
       case 15:
         obj.forEach(d => {
           if (d) {
-            const days = (d.getTime() - 946684800000) / 86400000;
+            const days = (d.getTime() - MS_DIFF) / 86400000;
             buffer.writeDoubleLE(days, offset);
           } else {
             buffer.writeDoubleLE(NaN, offset);
