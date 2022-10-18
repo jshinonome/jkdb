@@ -13,8 +13,9 @@ export class QConnection extends EventEmitter {
  * @param  {string}    [socketArgs.user]
  * @param  {string}    [socketArgs.password]
  * @param  {boolean}   useBigInt
+ * @param  {boolean}   useTLS
  */
-  constructor(socketArgs, useBigInt = false, socketTimeout = 0, socketNoDelay = true) {
+  constructor(socketArgs, useBigInt = false, useTLS = false, socketTimeout = 0, socketNoDelay = true) {
     super();
     this.socketArgs = socketArgs;
     this.host = socketArgs.host || 'localhost';
@@ -30,6 +31,7 @@ export class QConnection extends EventEmitter {
     this.socketNoDelay = socketNoDelay;
     this.msgBuffer = Buffer.alloc(0);
     this.msgOffset = 0;
+    this.useTLS = useTLS;
   }
 
   setSocket(socket) {
