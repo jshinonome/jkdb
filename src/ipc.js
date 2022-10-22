@@ -450,13 +450,6 @@ function deserialize(buffer, useBigInt = false) {
       return readArray(10);
     }
 
-    if (kType === 100) {
-      // skip namespace
-      readArray[245]();
-      offset++;
-      return readArray(10);
-    }
-
     if (kType === 101) {
       return null;
     }
