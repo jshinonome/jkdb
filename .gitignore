@@ -1,6 +1,6 @@
 .vscode
 *.d.ts
-jkdb-v1.0.0.tgz
+*.tgz
 jkdb.min.js
 local
 node_modules

@@ -99,8 +99,8 @@ function intToTemporal(unit, kType) {
   }
 
   let yyyy, MM, hh, mm, ss, SSS;
-  const sign = unit < 0 ? -1 : 1;
-  const absUnit = unit * sign;
+  const sign = unit < 0 ? '-' : '';
+  const absUnit = Math.abs(unit);
   switch (kType) {
     // month
     case 243:
@@ -111,24 +111,24 @@ function intToTemporal(unit, kType) {
     // minute
     case 239:
     case 17:
-      hh = sign * ((absUnit / 60) >>> 0);
+      hh = (absUnit / 60) >>> 0;
       mm = absUnit % 60;
-      return [hh, mm].map(val => String(val).padStart(2, '0')).join(':');
+      return sign + [hh, mm].map(val => String(val).padStart(2, '0')).join(':');
     // second
     case 238:
     case 18:
-      hh = sign * ((absUnit / 3600) >>> 0);
+      hh = (absUnit / 3600) >>> 0;
       mm = (absUnit / 60) % 60 >>> 0;
       ss = absUnit % 60;
-      return [hh, mm, ss].map(val => String(val).padStart(2, '0')).join(':');
+      return sign + [hh, mm, ss].map(val => String(val).padStart(2, '0')).join(':');
     // ms
     case 237:
     case 19:
-      hh = sign * ((absUnit / 3600000) >>> 0);
+      hh = (absUnit / 3600000) >>> 0;
       mm = (absUnit / 60000) % 60 >>> 0;
       ss = absUnit / 1000 % 60 >>> 0;
       SSS = absUnit % 1000;
-      return [hh, mm, ss].map(val => String(val).padStart(2, '0')).join(':') + '.' + String(SSS).padStart(3, '0');
+      return sign + [hh, mm, ss].map(val => String(val).padStart(2, '0')).join(':') + '.' + String(SSS).padStart(3, '0');
     default:
       throw new Error('FAILED_TO_CAST_TO_TEMPORAL_STRING - ' + kType);
   }

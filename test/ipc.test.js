@@ -344,6 +344,7 @@ test('deserialize timespan list', () => {
 });
 
 test('deserialize minute', () => {
+  expect(d('010000000d000000eff7ffffff')).toStrictEqual('-00:09');
   expect(d('010000000d000000efadfcffff')).toStrictEqual('-14:11');
   expect(d('010000000d000000ef53030000')).toStrictEqual('14:11');
   expect(d('010000000d000000ef00000080')).toBe(null);
@@ -359,6 +360,7 @@ test('deserialize minute list', () => {
 });
 
 test('deserialize second', () => {
+  expect(d('010000000d000000eef7ffffff')).toStrictEqual('-00:00:09');
   expect(d('010000000d000000ee5b38ffff')).toStrictEqual('-14:11:49');
   expect(d('010000000d000000eea5c70000')).toStrictEqual('14:11:49');
   expect(d('010000000d000000ee00000080')).toBe(null);
@@ -374,6 +376,7 @@ test('deserialize second list', () => {
 });
 
 test('deserialize time', () => {
+  expect(d('010000000d000000edf7ffffff')).toStrictEqual('-00:00:00.009');
   expect(d('010000000d000000eddc20f4fc')).toStrictEqual('-14:11:49.668');
   expect(d('010000000d000000ed24df0b03')).toStrictEqual('14:11:49.668');
   expect(d('010000000d000000ed00000080')).toBe(null);
