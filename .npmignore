@@ -7,3 +7,5 @@ README.md
 rollup.config.js
 src
 test
+*tgz
+.eslintrc.yml
