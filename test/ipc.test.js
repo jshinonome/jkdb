@@ -403,6 +403,17 @@ test('deserialize/serialize dictionary', () => {
   expect(s(obj)).toBe(msg);
 });
 
+test('deserialize dictionary with table value', () => {
+  const msg = '010000005900000063' + '0b00010000006f757470757400' + '6200630b000300000077006800627974657300000003000000070001000000640000000000000007000100000064000000000000000700010000006400000000000000';
+  const table = {
+    'w': 100,
+    'h': 100,
+    'bytes': 100,
+  };
+  const obj = { 'output': table };
+  expect(d(msg)).toStrictEqual(obj);
+});
+
 test('deserialize/serialize flip table', () => {
   const msg = '010000005700000063' +
     '0b000300000073796d0064617465006f70656e00' + '000003000000' +

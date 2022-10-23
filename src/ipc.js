@@ -386,7 +386,7 @@ function deserialize(buffer, useBigInt = false) {
     }
   };
 
-  const read = () => {
+  const read = (flipTable = false) => {
     // kType
     const kType = buffer[offset++];
     if (kType === 128) {
@@ -406,7 +406,8 @@ function deserialize(buffer, useBigInt = false) {
     if (kType === 99) {
       const isKeyTable = buffer[offset] === 98;
       const k = read();
-      const v = read();
+      // key is not a table, treat value table as a list of dictionaries
+      const v = k[Symbol.for('meta')] ? read() : read(flipTable = true);
       if (isKeyTable) {
         for (const [key, value] of Object.entries(v)) {
           k[key] = value;
@@ -440,7 +441,20 @@ function deserialize(buffer, useBigInt = false) {
       });
       // append meta
       table[Symbol.for('meta')] = meta;
-      return table;
+      if (flipTable) {
+        const rows = new Array(table[meta.c[0]].length);
+        table[meta.c[0]].forEach(
+          (_v, i) => {
+            const row = {};
+            meta.c.forEach(
+              (col) => row[col] = table[col][i]
+            );
+            rows[i] = row;
+          });
+        return rows;
+      } else {
+        return table;
+      }
     }
 
     if (kType === 100) {
