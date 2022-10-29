@@ -12,26 +12,29 @@ export class QConnection extends EventEmitter {
  * @param  {number}    socketArgs.port
  * @param  {string}    [socketArgs.user]
  * @param  {string}    [socketArgs.password]
- * @param  {boolean}   useBigInt
- * @param  {boolean}   useTLS
+ * @param  {boolean}   [socketArgs.useBigInt]
+ * @param  {boolean}   [socketArgs.enableTLS]
+ * @param  {boolean}   [socketArgs.socketTimeout]
+ * @param  {boolean}   [socketArgs.includeNanosecond]
  */
-  constructor(socketArgs, useBigInt = false, useTLS = false, socketTimeout = 0, socketNoDelay = true) {
+  constructor(socketArgs) {
     super();
     this.socketArgs = socketArgs;
-    this.host = socketArgs.host || 'localhost';
+    this.host = socketArgs.host ?? 'localhost';
     this.port = socketArgs.port;
-    this.user = socketArgs.user || '';
-    this.password = socketArgs.password || '';
-    this.useBigInt = useBigInt;
+    this.user = socketArgs.user ?? '';
+    this.password = socketArgs.password ?? '';
+    this.useBigInt = socketArgs.useBigInt ?? false;
     /** @type {net.Socket|tls.TLSSocket|null} */
     this.socket = null;
     /** @type {function[]} */
     this.callbacks = [];
-    this.socketTimeout = socketTimeout;
-    this.socketNoDelay = socketNoDelay;
+    this.socketTimeout = socketArgs.socketTimeout ?? 0;
+    this.socketNoDelay = socketArgs.socketNoDelay ?? true;
     this.msgBuffer = Buffer.alloc(0);
     this.msgOffset = 0;
-    this.useTLS = useTLS;
+    this.enableTLS = socketArgs.enableTLS ?? false;
+    this.includeNanosecond = socketArgs.includeNanosecond ?? false;
   }
 
   setSocket(socket) {
@@ -104,7 +107,7 @@ export class QConnection extends EventEmitter {
       this.auth(socket, callback);
     };
 
-    if (this.useTLS) {
+    if (this.enableTLS) {
       socket = tls.connect(this.port, this.host, { rejectUnauthorized: false }, connectListener);
     } else {
       socket = net.connect(this.port, this.host, connectListener);
@@ -162,7 +165,7 @@ export class QConnection extends EventEmitter {
     while (this.msgOffset > 0 && this.msgOffset >= this.msgBuffer.length) {
       let obj, err;
       try {
-        obj = IPC.deserialize(this.msgBuffer, this.useBigInt, this.includeMeta);
+        obj = IPC.deserialize(this.msgBuffer, this.useBigInt, this.includeNanosecond);
         err = null;
       } catch (e) {
         obj = null;

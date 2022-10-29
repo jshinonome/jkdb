@@ -8,6 +8,7 @@ const LONG_NULL = -9223372036854775808n;
 const LONG_POSITIVE_INFINITY = 9223372036854775807n;
 const LONG_NEGATIVE_INFINITY = -9223372036854775807n;
 const MS_DIFF = 946684800000;
+const MS_PER_DAY = 86400000;
 const K_TYPE_CHAR = ' bg xhijefcspmdznuvt';
 
 const SIZE_BY_K_TYPE = {
@@ -177,9 +178,10 @@ function convertBigI64(bigI64) {
  *
  * @param {Buffer} buffer
  * @param {boolean} useBigInt
+ * @param {boolean} includeNanosecond
  * @returns {any}
  */
-function deserialize(buffer, useBigInt = false) {
+function deserialize(buffer, useBigInt = false, includeNanosecond = false) {
   let offset = 8;
 
   const readAtomByKType = {
@@ -213,25 +215,30 @@ function deserialize(buffer, useBigInt = false) {
       offset = end + 1;
       return sym;
     },
-    // javascript has ms precision
+    // timestamp
     244: () => {
       const ns = readAtomByKType[249](true);
-      return typeof ns === 'bigint' ? new Date(Number(ns / 1000000n) + MS_DIFF) : null;
+      if (typeof ns === 'bigint') {
+        const date = new Date(Number(ns / 1000000n) + MS_DIFF);
+        return includeNanosecond ? date.toISOString().slice(0, -1) + String(ns % 1000000n).padStart(6, '0') : date;
+      } else {
+        return includeNanosecond ? '' : null;
+      }
     },
     243: () => {
       const month = readAtomByKType[250]();
       return intToTemporal(month, 243);
     },
-    // UTC date
+    // date
     242: () => {
       const day = readAtomByKType[250]();
-      return Number.isFinite(day) ? new Date(MS_DIFF + day * 86400000) : null;
+      return Number.isFinite(day) ? new Date(MS_DIFF + day * MS_PER_DAY) : null;
     },
     // datetime
     241: () => {
       const datetime = readAtomByKType[247]();
       if (Number.isFinite(datetime)) {
-        return new Date(MS_DIFF + datetime * 86400000);
+        return new Date(MS_DIFF + datetime * MS_PER_DAY);
       } else {
         return null;
       }
@@ -342,9 +349,10 @@ function deserialize(buffer, useBigInt = false) {
         for (i = 0; i < n; i++) {
           const ns = dv.getBigInt64(i * size, true);
           if (ns === LONG_NULL || ns === LONG_POSITIVE_INFINITY || ns === LONG_NEGATIVE_INFINITY) {
-            array[i] = null;
+            array[i] = includeNanosecond ? '' : null;
           } else {
-            array[i] = new Date(Number(ns / 1000000n) + MS_DIFF);
+            const date = new Date(Number(ns / 1000000n) + MS_DIFF);
+            array[i] = includeNanosecond ? date.toISOString().slice(0, -1) + String(ns % 1000000n).padStart(6, '0') : date;
           }
         }
         return array;
@@ -358,17 +366,19 @@ function deserialize(buffer, useBigInt = false) {
           array[i] = Number.isFinite(unit) ? intToTemporal(unit, kType) : null;
         }
         return array;
+      // date
       case 14:
         for (i = 0; i < n; i++) {
           const i32 = dv.getInt32(i * size, true);
           const day = convertI32(i32);
-          array[i] = Number.isFinite(day) ? new Date(MS_DIFF + day * 86400000) : null;
+          array[i] = Number.isFinite(day) ? new Date(MS_DIFF + day * MS_PER_DAY) : null;
         }
         return array;
+      // datetime
       case 15:
         for (i = 0; i < n; i++) {
           const dt = dv.getFloat64(i * size, true);
-          array[i] = Number.isFinite(dt) ? new Date(MS_DIFF + Math.round(dt * 86400000)) : null;
+          array[i] = Number.isFinite(dt) ? new Date(MS_DIFF + Math.round(dt * MS_PER_DAY)) : null;
         }
         return array;
       case 16:
@@ -751,7 +761,7 @@ function serialize(obj) {
       case 14:
         obj.forEach(d => {
           if (d) {
-            const days = (d.getTime() - MS_DIFF) / 86400000;
+            const days = (d.getTime() - MS_DIFF) / MS_PER_DAY;
             // auto truncate here
             buffer.writeInt32LE(days, offset);
           } else {
@@ -764,7 +774,7 @@ function serialize(obj) {
       case 15:
         obj.forEach(d => {
           if (d) {
-            const days = (d.getTime() - MS_DIFF) / 86400000;
+            const days = (d.getTime() - MS_DIFF) / MS_PER_DAY;
             buffer.writeDoubleLE(days, offset);
           } else {
             buffer.writeDoubleLE(NaN, offset);

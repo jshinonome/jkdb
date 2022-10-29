@@ -1,7 +1,7 @@
 import IPC from '../src/ipc';
 
-function d(hexString, useBigInt = false) {
-  return IPC.deserialize(Buffer.from(hexString, 'hex'), useBigInt);
+function d(hexString, useBigInt = false, includeNanosecond = false) {
+  return IPC.deserialize(Buffer.from(hexString, 'hex'), useBigInt, includeNanosecond);
 }
 
 function s(obj) {
@@ -243,6 +243,13 @@ test('deserialize timestamp', () => {
   expect(d('0100000011000000f40100000000000080')).toBe(null);
 });
 
+test('deserialize timestamp include nanosecond', () => {
+  expect(d('0100000011000000f44f13ca13115eff09', false, true)).toStrictEqual('2022-10-29T22:31:32.842033999');
+  expect(d('0100000011000000f40000000000000080', false, true)).toBe('');
+  expect(d('0100000011000000f4ffffffffffffff7f', false, true)).toBe('');
+  expect(d('0100000011000000f40100000000000080', false, true)).toBe('');
+});
+
 test('deserialize/serialize timestamp', () => {
   const msg = '0100000011000000f400f8e10e6849f709';
   const obj = new Date('2022-10-03T14:42:56.864Z');
@@ -256,6 +263,15 @@ test('deserialize timestamp list', () => {
   obj[Symbol.for('kType')] = 'p';
   expect(d(msg)).toStrictEqual(obj);
 });
+
+
+test('deserialize timestamp list include nanosecond', () => {
+  const msg = '010000002e0000000c00040000004f13ca13115eff090000000000000080ffffffffffffff7f0100000000000080';
+  const obj = ['2022-10-29T22:31:32.842033999', '', '', ''];
+  obj[Symbol.for('kType')] = 'p';
+  expect(d(msg, false, true)).toStrictEqual(obj);
+});
+
 
 test('deserialize/serialize timestamp list', () => {
   const msg = '010000001e0000000c000200000000f8e10e6849f7090000000000000080';
