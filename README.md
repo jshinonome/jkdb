@@ -16,9 +16,9 @@ npm install --save-dev jkdb
 const { QConnection } = require("jkdb");
 const q = new QConnection({ port: 1800 });
 q.connect((err) => {
-    if (err) throw err;
-    console.log("connected");
-    // send query from here
+  if (err) throw err;
+  console.log("connected");
+  // send query from here
 });
 ```
 
@@ -28,9 +28,9 @@ q.connect((err) => {
 const { QConnection } = require("jkdb");
 const q = new QConnection({ port: 1800, useTLS: true });
 q.connect((err) => {
-    if (err) throw err;
-    console.log("connected");
-    // send query from here
+  if (err) throw err;
+  console.log("connected");
+  // send query from here
 });
 ```
 
@@ -40,9 +40,9 @@ q.connect((err) => {
 const { QConnection } = require("jkdb");
 const q = new QConnection({ port: 1800, user: "user", password: "password" });
 q.connect((err) => {
-    if (err) throw err;
-    console.log("connected");
-    // send query from here
+  if (err) throw err;
+  console.log("connected");
+  // send query from here
 });
 ```
 
@@ -50,9 +50,9 @@ q.connect((err) => {
 
 ```javascript
 q.sync("(+/) til 10", (err, res) => {
-    if (err) throw err;
-    console.log("result: ", res);
-    // result: 45
+  if (err) throw err;
+  console.log("result: ", res);
+  // result: 45
 });
 ```
 
@@ -60,9 +60,9 @@ q.sync("(+/) til 10", (err, res) => {
 
 ```javascript
 q.sync(["(*/)", [22, 27, 45]], (err, res) => {
-    if (err) throw err;
-    console.log("result: ", res);
-    // result: 26730
+  if (err) throw err;
+  console.log("result: ", res);
+  // result: 26730
 });
 ```
 
@@ -70,20 +70,20 @@ q.sync(["(*/)", [22, 27, 45]], (err, res) => {
 
 ```javascript
 q.sync(
+  [
+    "mmu",
+    [1, 2, 3],
     [
-        "mmu",
-        [1, 2, 3],
-        [
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9],
-        ],
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
     ],
-    (err, res) => {
-        if (err) throw err;
-        console.log("result: ", res);
-        // result: 30,36,42
-    }
+  ],
+  (err, res) => {
+    if (err) throw err;
+    console.log("result: ", res);
+    // result: 30,36,42
+  }
 );
 ```
 
@@ -91,7 +91,7 @@ q.sync(
 
 ```javascript
 q.asyn("show 99", (err) => {
-    if (err) throw err;
+  if (err) throw err;
 });
 ```
 
@@ -99,7 +99,7 @@ q.asyn("show 99", (err) => {
 
 ```javascript
 q.asyn(["show", 99], (err) => {
-    if (err) throw err;
+  if (err) throw err;
 });
 ```
 
@@ -107,11 +107,11 @@ q.asyn(["show", 99], (err) => {
 
 ```javascript
 q.on("upd", (table, data) => {
-    console.log(table, data);
+  console.log(table, data);
 });
 
 q.sync(".u.sub[`trade;`7203.T]", (err, _res) => {
-    if (err) throw err;
+  if (err) throw err;
 });
 ```
 
@@ -119,7 +119,7 @@ q.sync(".u.sub[`trade;`7203.T]", (err, _res) => {
 
 ```javascript
 q.close(() => {
-    console.log("closed");
+  console.log("closed");
 });
 ```
 
@@ -127,29 +127,33 @@ q.close(() => {
 
 ### Deserialization
 
-| k type    | javascript type | k null                           | infinity | -infinity |
-| --------- | --------------- | -------------------------------- | -------- | --------- |
-| boolean   | Boolean         |                                  |          |           |
-| guid      | String          | 00000000000000000000000000000000 |          |           |
-| byte      | Number          |                                  |          |           |
-| short     | Number          | NaN                              | Infinity | -Infinity |
-| int       | Number          | NaN                              | Infinity | -Infinity |
-| long      | Number          | NaN                              | Infinity | -Infinity |
-| real      | Number          | NaN                              | Infinity | -Infinity |
-| float     | Number          | NaN                              | Infinity | -Infinity |
-| char      | String          | ' '                              |          |           |
-| symbol    | String          | ''                               |          |           |
-| timestamp | Date            | null                             | null     | null      |
-| month     | String          | null                             | null     | null      |
-| date      | Date            | null                             | null     | null      |
-| datetime  | Date            | null                             | null     | null      |
-| timespan  | String          | null                             | null     | null      |
-| minute    | String          | null                             | null     | null      |
-| second    | String          | null                             | null     | null      |
-| time      | String          | null                             | null     | null      |
-| dict      | Object          |                                  |          |           |
-| list      | Array           |                                  |          |           |
-| table     | Object          |                                  |          |           |
+Deserialization of long and timestamp can be controlled by QConnection arguments `useBigInt` and `includeNanosecond`.
+
+| k type    | argument          | javascript type | k null                           | infinity | -infinity |
+| --------- | ----------------- | --------------- | -------------------------------- | -------- | --------- |
+| boolean   |                   | Boolean         |                                  |          |           |
+| guid      |                   | String          | 00000000000000000000000000000000 |          |           |
+| byte      |                   | Number          |                                  |          |           |
+| short     |                   | Number          | NaN                              | Infinity | -Infinity |
+| int       |                   | Number          | NaN                              | Infinity | -Infinity |
+| long      |                   | Number          | NaN                              | Infinity | -Infinity |
+| long      | useBigInt         | BigInt          | NaN                              | Infinity | -Infinity |
+| real      |                   | Number          | NaN                              | Infinity | -Infinity |
+| float     |                   | Number          | NaN                              | Infinity | -Infinity |
+| char      |                   | String          | ' '                              |          |           |
+| symbol    |                   | String          | ''                               |          |           |
+| timestamp |                   | Date            | null                             | null     | null      |
+| timestamp | includeNanosecond | String          | ''                               | ''       | ''        |
+| month     |                   | String          | null                             | null     | null      |
+| date      |                   | Date            | null                             | null     | null      |
+| datetime  |                   | Date            | null                             | null     | null      |
+| timespan  |                   | String          | null                             | null     | null      |
+| minute    |                   | String          | null                             | null     | null      |
+| second    |                   | String          | null                             | null     | null      |
+| time      |                   | String          | null                             | null     | null      |
+| dict      |                   | Object          |                                  |          |           |
+| list      |                   | Array           |                                  |          |           |
+| table     |                   | Object          |                                  |          |           |
 
 ### Serialization
 
@@ -198,12 +202,12 @@ Convert to a table, e.g.
 
 ```javascript
 const table = {
-    sym: ["AXJO", "AXJO"],
-    date: [new Date("2021-05-13"), new Date("2021-05-14")],
-    open: [7000, 6000],
+  sym: ["AXJO", "AXJO"],
+  date: [new Date("2021-05-13"), new Date("2021-05-14")],
+  open: [7000, 6000],
 };
 table[Symbol.for("meta")] = {
-    c: ["sym", "date", "open"],
-    t: ["s", "d", "f"],
+  c: ["sym", "date", "open"],
+  t: ["s", "d", "f"],
 };
 ```
