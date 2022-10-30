@@ -3,9 +3,9 @@ babel.config.json
 integration
 local
 package-lock.json
-README.md
 rollup.config.js
 src
 test
 *tgz
 .eslintrc.yml
+tsconfig.json
