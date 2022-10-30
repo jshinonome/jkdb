@@ -16,6 +16,7 @@ export class QConnection extends EventEmitter {
  * @param  {boolean}   [socketArgs.enableTLS]
  * @param  {boolean}   [socketArgs.socketTimeout]
  * @param  {boolean}   [socketArgs.includeNanosecond]
+ * @param  {boolean}   [socketArgs.dateToMillisecond]
  */
   constructor(socketArgs) {
     super();
@@ -35,6 +36,7 @@ export class QConnection extends EventEmitter {
     this.msgOffset = 0;
     this.enableTLS = socketArgs.enableTLS ?? false;
     this.includeNanosecond = socketArgs.includeNanosecond ?? false;
+    this.dateToMillisecond = socketArgs.dateToMillisecond ?? false;
   }
 
   setSocket(socket) {
@@ -165,7 +167,7 @@ export class QConnection extends EventEmitter {
     while (this.msgOffset > 0 && this.msgOffset >= this.msgBuffer.length) {
       let obj, err;
       try {
-        obj = IPC.deserialize(this.msgBuffer, this.useBigInt, this.includeNanosecond);
+        obj = IPC.deserialize(this.msgBuffer, this.useBigInt, this.includeNanosecond, this.dateToMillisecond);
         err = null;
       } catch (e) {
         obj = null;

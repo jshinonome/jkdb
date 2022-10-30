@@ -146,7 +146,9 @@ Deserialization of long and timestamp can be controlled by QConnection arguments
 | timestamp | includeNanosecond | String          | ''                               | ''       | ''        |
 | month     |                   | String          | null                             | null     | null      |
 | date      |                   | Date            | null                             | null     | null      |
+| date      | dateToMillisecond | Number          | NaN                              | Infinity | -Infinity |
 | datetime  |                   | Date            | null                             | null     | null      |
+| datetime  | dateToMillisecond | Number          | NaN                              | Infinity | -Infinity |
 | timespan  |                   | String          | null                             | null     | null      |
 | minute    |                   | String          | null                             | null     | null      |
 | second    |                   | String          | null                             | null     | null      |

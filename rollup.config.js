@@ -11,7 +11,7 @@ export default {
   input: 'src/index.js',
   output: {
     file: 'jkdb.min.js',
-    format: 'umd',
+    format: 'cjs',
     name: 'jkdb',
     compact: true
   },

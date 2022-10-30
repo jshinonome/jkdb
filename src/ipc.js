@@ -179,9 +179,10 @@ function convertBigI64(bigI64) {
  * @param {Buffer} buffer
  * @param {boolean} useBigInt
  * @param {boolean} includeNanosecond
+ * @param {boolean} dateToMillisecond
  * @returns {any}
  */
-function deserialize(buffer, useBigInt = false, includeNanosecond = false) {
+function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateToMillisecond = false) {
   let offset = 8;
 
   const readAtomByKType = {
@@ -231,17 +232,13 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false) {
     },
     // date
     242: () => {
-      const day = readAtomByKType[250]();
-      return Number.isFinite(day) ? new Date(MS_DIFF + day * MS_PER_DAY) : null;
+      const ms = MS_DIFF + readAtomByKType[250]() * MS_PER_DAY;
+      return dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
     },
     // datetime
     241: () => {
-      const datetime = readAtomByKType[247]();
-      if (Number.isFinite(datetime)) {
-        return new Date(MS_DIFF + datetime * MS_PER_DAY);
-      } else {
-        return null;
-      }
+      const ms = MS_DIFF + readAtomByKType[247]() * MS_PER_DAY;
+      return dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
     },
     240: () => {
       const ns = readAtomByKType[249](true);
@@ -370,15 +367,15 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false) {
       case 14:
         for (i = 0; i < n; i++) {
           const i32 = dv.getInt32(i * size, true);
-          const day = convertI32(i32);
-          array[i] = Number.isFinite(day) ? new Date(MS_DIFF + day * MS_PER_DAY) : null;
+          const ms = MS_DIFF + convertI32(i32) * MS_PER_DAY;
+          array[i] = dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
         }
         return array;
       // datetime
       case 15:
         for (i = 0; i < n; i++) {
-          const dt = dv.getFloat64(i * size, true);
-          array[i] = Number.isFinite(dt) ? new Date(MS_DIFF + Math.round(dt * MS_PER_DAY)) : null;
+          const ms = MS_DIFF + dv.getFloat64(i * size, true) * MS_PER_DAY;
+          array[i] = dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
         }
         return array;
       case 16:

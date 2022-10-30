@@ -1,7 +1,7 @@
 import IPC from '../src/ipc';
 
-function d(hexString, useBigInt = false, includeNanosecond = false) {
-  return IPC.deserialize(Buffer.from(hexString, 'hex'), useBigInt, includeNanosecond);
+function d(hexString, useBigInt = false, includeNanosecond = false, dateToMillisecond = false) {
+  return IPC.deserialize(Buffer.from(hexString, 'hex'), useBigInt, includeNanosecond, dateToMillisecond);
 }
 
 function s(obj) {
@@ -304,11 +304,26 @@ test('deserialize date', () => {
   expect(d('010000000d000000f201000080')).toBe(null);
 });
 
+test('deserialize date to millisecond', () => {
+  expect(d('010000000d000000f26feeffff', false, false, true)).toBe(558144000000);
+  expect(d('010000000d000000f277200000', false, false, true)).toBe(1664755200000);
+  expect(d('010000000d000000f200000080', false, false, true)).toBe(NaN);
+  expect(d('010000000d000000f2ffffff7f', false, false, true)).toBe(Infinity);
+  expect(d('010000000d000000f201000080', false, false, true)).toBe(-Infinity);
+});
+
 test('deserialize date list', () => {
-  const msg = d('010000001e0000000e00040000007720000000000080ffffff7f01000080');
+  const msg = '010000001e0000000e00040000007720000000000080ffffff7f01000080';
   const obj = [new Date('2022-10-03'), null, null, null];
   obj[Symbol.for('kType')] = 'd';
-  expect(msg).toStrictEqual(obj);
+  expect(d(msg)).toStrictEqual(obj);
+});
+
+test('deserialize date list to millisecond', () => {
+  const msg = '010000001e0000000e00040000007720000000000080ffffff7f01000080';
+  const obj = [1664755200000, NaN, Infinity, -Infinity];
+  obj[Symbol.for('kType')] = 'd';
+  expect(d(msg, false, false, true)).toStrictEqual(obj);
 });
 
 test('deserialize/serialize date list', () => {
@@ -319,7 +334,6 @@ test('deserialize/serialize date list', () => {
   expect(s(obj)).toBe(msg);
 });
 
-
 test('deserialize datetime', () => {
   expect(d('0100000011000000f174f58bc97990b1c0')).toStrictEqual(new Date('1987-09-09T12:34:56.789Z'));
   expect(d('0100000011000000f1cccccccccc3bc040')).toStrictEqual(new Date('2022-10-03T14:24:00.000Z'));
@@ -328,11 +342,26 @@ test('deserialize datetime', () => {
   expect(d('0100000011000000f1000000000000f0ff')).toBe(null);
 });
 
+test('deserialize datetime to millisecond', () => {
+  expect(d('0100000011000000f174f58bc97990b1c0', false, false, true)).toBe(558189296789);
+  expect(d('0100000011000000f1cccccccccc3bc040', false, false, true)).toBe(1664807040000);
+  expect(d('0100000011000000f1000000000000f8ff', false, false, true)).toBe(NaN);
+  expect(d('0100000011000000f1000000000000f07f', false, false, true)).toBe(Infinity);
+  expect(d('0100000011000000f1000000000000f0ff', false, false, true)).toBe(-Infinity);
+});
+
 test('deserialize datetime list', () => {
   const msg = '010000002e0000000f0004000000cdcccccccc3bc040000000000000f8ff000000000000f07f000000000000f0ff';
   const obj = [new Date('2022-10-03T14:24:00.000Z'), null, null, null];
   obj[Symbol.for('kType')] = 'z';
   expect(d(msg)).toStrictEqual(obj);
+});
+
+test('deserialize datetime list to millisecond', () => {
+  const msg = '010000002e0000000f0004000000cdcccccccc3bc040000000000000f8ff000000000000f07f000000000000f0ff';
+  const obj = [1664807040000, NaN, Infinity, -Infinity];
+  obj[Symbol.for('kType')] = 'z';
+  expect(d(msg, false, false, true)).toStrictEqual(obj);
 });
 
 test('deserialize/serialize datetime list', () => {
