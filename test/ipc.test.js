@@ -442,6 +442,13 @@ test('deserialize dictionary', () => {
   expect(d(msg)).toStrictEqual(obj);
 });
 
+test('deserialize namespace', () => {
+  const msg = '0100000023000000630b00020000000062000000020000006500f90100000000000000';
+  const obj = { '': null, 'b': 1 };
+  expect(d(msg)).toStrictEqual(obj);
+});
+
+
 test('deserialize/serialize dictionary', () => {
   const msg = '0100000034000000' +
     '630b000200000073796d00707269636500' +

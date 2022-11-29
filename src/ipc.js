@@ -472,6 +472,7 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
     }
 
     if (kType === 101) {
+      offset++;
       return null;
     }
 
