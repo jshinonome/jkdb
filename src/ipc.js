@@ -32,6 +32,105 @@ const SIZE_BY_K_TYPE = {
   101: 1,
 };
 
+const K101 = {
+  0: null,
+  1: '+:',
+  2: '-:',
+  3: '*:',
+  4: '%:',
+  5: '&:',
+  6: '|:',
+  7: '^:',
+  8: '=:',
+  9: '<:',
+  10: '>:',
+  11: '$:',
+  12: ',:',
+  13: '#:',
+  14: '_:',
+  15: '~:',
+  16: '!:',
+  17: '?:',
+  18: '@:',
+  19: '.:',
+  20: '0::',
+  21: '1::',
+  22: '2::',
+  23: 'avg',
+  24: 'last',
+  25: 'sum',
+  26: 'prd',
+  27: 'min',
+  28: 'max',
+  29: 'exit',
+  30: 'getenv',
+  31: 'abs',
+  32: 'sqrt',
+  33: 'log',
+  34: 'exp',
+  35: 'sin',
+  36: 'asin',
+  37: 'cos',
+  38: 'acos',
+  39: 'tan',
+  40: 'atan',
+  41: 'enlist',
+  42: 'var',
+  43: 'dev',
+  44: 'hopen',
+  // projection null
+  255: '::',
+};
+
+const K102 = {
+  0: ':',
+  1: '+',
+  2: '-',
+  3: '*',
+  4: '%',
+  5: '&',
+  6: '|',
+  7: '^',
+  8: '=',
+  9: '<',
+  10: '>',
+  11: '$',
+  12: ',',
+  13: '#',
+  14: '_',
+  15: '~',
+  16: '!',
+  17: '?',
+  18: '@',
+  19: '.',
+  20: '0:',
+  21: '1:',
+  22: '2:',
+  23: 'in',
+  24: 'within',
+  25: 'like',
+  26: 'bin',
+  27: 'ss',
+  28: 'insert',
+  29: 'wsum',
+  30: 'wavg',
+  31: 'div',
+  32: 'xexp',
+  33: 'setenv',
+  34: 'binr',
+  35: 'cov',
+  36: 'cor',
+};
+
+const K103 = {
+  0: '\'',
+  1: '/',
+  2: '\\',
+  3: '\':',
+  4: '/:',
+  5: '\\:',
+};
+
 /**
  *
  * @param {Buffer} cMsg
@@ -472,10 +571,19 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
     }
 
     if (kType === 101) {
-      offset++;
-      return null;
+      // unary primitive
+      return K101[buffer[offset++]];
     }
 
+    if (kType === 102) {
+      // operator
+      return K102[buffer[offset++]];
+    }
+
+    if (kType === 103) {
+      // iterator
+      return K103[buffer[offset++]];
+    }
     throw new Error('UNSUPPORTED_K_TYPE[read] - ' + kType);
   };
 

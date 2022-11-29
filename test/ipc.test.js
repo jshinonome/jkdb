@@ -436,6 +436,25 @@ test('deserialize time list', () => {
   expect(d(msg)).toStrictEqual(obj);
 });
 
+test('deserialize unary primitive', () => {
+  const msg = '010000000a00000065ff';
+  const obj = '::';
+  expect(d(msg)).toStrictEqual(obj);
+});
+
+test('deserialize operator', () => {
+  const msg = '010000000a0000006619';
+  const obj = 'like';
+  expect(d(msg)).toStrictEqual(obj);
+});
+
+test('deserialize iterator', () => {
+  const msg = '010000000a0000006700';
+  const obj = '\'';
+  expect(d(msg)).toStrictEqual(obj);
+});
+
+
 test('deserialize dictionary', () => {
   const msg = '0100000029000000630b00020000006100620007000200000001000000000000000200000000000000';
   const obj = { 'a': 1, 'b': 2 };
