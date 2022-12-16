@@ -1,5 +1,5 @@
-import { QConnection } from '../src/index';
 import { spawn } from 'child_process';
+import { QConnection } from '../src/index';
 
 const qProcess = spawn('q', ['-p', '1999']);
 
@@ -45,6 +45,21 @@ test('connect to kdb with correct credentials', done => {
         expect(err).toBe(null);
         qWithCorrectCredential.close();
         done();
+      });
+    });
+  });
+});
+
+test('lost connection while querying', done => {
+  const qProcess = spawn('q', ['-p', '1998']);
+  qProcess.stdin.write('.z.D', () => {
+    const q = new QConnection({ port: 1998 });
+    q.connect(err => {
+      expect(err).toBe(null);
+      q.sync('exit 0', (err, _res) => {
+        expect(err.message).toBe('LOST_CONNECTION');
+        done();
+        qProcess.kill();
       });
     });
   });

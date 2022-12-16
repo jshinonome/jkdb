@@ -67,6 +67,11 @@ export class QConnection extends EventEmitter {
           this.callbacks = [];
           this.setSocket(socket);
           callback(null);
+          // send error to all existing callbacks
+          socket.on('close', () => {
+            this.callbacks.forEach(cb => cb(new Error('LOST_CONNECTION'), null));
+            this.callbacks = [];
+          });
         } else {
           callback(new Error('UNSUPPORTED_KDB_VERSION<=2.5'));
         }
