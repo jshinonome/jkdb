@@ -1,5 +1,7 @@
 # jkdb
 
+[![](https://img.shields.io/npm/dm/jkdb?labelColor=4a148c&color=9c27b0&style=flat)](https://www.npmjs.com/package/jkdb)
+
 A zero dependency javascript Node.js package to interface with kdb+/q (v2.6+).
 
 ## Installation
