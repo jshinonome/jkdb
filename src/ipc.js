@@ -382,6 +382,14 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
     // skip attribute
     offset++;
     const n = readAtomByKType(250);
+
+    if (kType === 10) {
+      // string, char list
+      const str = buffer.subarray(offset, offset + n).toString();
+      offset += n;
+      return str;
+    }
+
     const array = new Array(n);
 
     // array with dynamic length atom
@@ -395,12 +403,17 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
         array[i] = readAtomByKType(245);
       }
       return array;
+    } else if (kType === 2) {
+      for (i = 0; i < n; i++) {
+        array[i] = buffer.subarray(offset + i * 16, offset + (i + 1) * 16).toString('hex');
+      }
+      offset += 16 * n;
+      return array;
     }
 
     // read fixed length array
     // DataView > Buffer.read > new TypedArray
     const dv = new DataView(buffer.buffer, offset + buffer.offset, SIZE_BY_K_TYPE[kType] * n);
-    const prevOffset = offset;
     const size = SIZE_BY_K_TYPE[kType];
     offset += n * size;
     let i = 0;
@@ -408,11 +421,6 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
       case 1:
         for (i = 0; i < n; i++) {
           array[i] = dv.getUint8(i) === 1;
-        }
-        return array;
-      case 2:
-        for (i = 0; i < n; i++) {
-          array[i] = buffer.subarray(prevOffset + i * 16, prevOffset + (i + 1) * 16).toString('hex');
         }
         return array;
       case 4:
@@ -455,9 +463,6 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
           array[i] = dv.getFloat64(i * size, true);
         }
         return array;
-      // string, char list
-      case 10:
-        return buffer.subarray(prevOffset, prevOffset + n).toString();
       // timestamp
       case 12:
         for (i = 0; i < n; i++) {
@@ -582,7 +587,10 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
     }
 
     if (kType === 100) {
-      offset += 2;
+      if (buffer[offset++] > 0) {
+        offset++;
+      }
+      offset++;
       return readArray(10);
     }
 

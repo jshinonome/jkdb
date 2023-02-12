@@ -541,19 +541,25 @@ test('deserialize keyed table', () => {
   expect(d(msg)).toStrictEqual(obj);
 });
 
-test('deserialize/serialize lambda', () => {
+test('deserialize lambda', () => {
   const msg = '010000001500000064000a00050000007b782b797d';
   const obj = '{x+y}';
   expect(d(msg)).toBe(obj);
 });
 
-test('deserialize/serialize projection with 2nd parameter', () => {
+test('deserialize lambda with namespace', () => {
+  const msg = '010000001d0000006468000a000c0000006b297b2823782923222d227d';
+  const obj = 'k){(#x)#"-"}';
+  expect(d(msg)).toBe(obj);
+});
+
+test('deserialize projection with 2nd parameter', () => {
   const msg = '01000000130000006803000000661b65fff64a';
   const obj = ['ss', '::', 'J'];
   expect(d(msg)).toStrictEqual(obj);
 });
 
-test('deserialize/serialize projection with 1st parameter', () => {
+test('deserialize projection with 1st parameter', () => {
   const msg = '010000001800000068020000006601f90100000000000000';
   const obj = ['+', 1];
   expect(d(msg)).toStrictEqual(obj);
