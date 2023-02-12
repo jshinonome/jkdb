@@ -541,6 +541,24 @@ test('deserialize keyed table', () => {
   expect(d(msg)).toStrictEqual(obj);
 });
 
+test('deserialize/serialize lambda', () => {
+  const msg = '010000001500000064000a00050000007b782b797d';
+  const obj = '{x+y}';
+  expect(d(msg)).toBe(obj);
+});
+
+test('deserialize/serialize projection with 2nd parameter', () => {
+  const msg = '01000000130000006803000000661b65fff64a';
+  const obj = ['ss', '::', 'J'];
+  expect(d(msg)).toStrictEqual(obj);
+});
+
+test('deserialize/serialize projection with 1st parameter', () => {
+  const msg = '010000001800000068020000006601f90100000000000000';
+  const obj = ['+', 1];
+  expect(d(msg)).toStrictEqual(obj);
+});
+
 test('decompression', () => {
   const msg = '0110010026000000de070000000100d00700000101ff00ff00ff00ff00ff00ff00ff00ff00c5';
   const obj = Array.from({ length: 2000 }, (_v, _k) => true);

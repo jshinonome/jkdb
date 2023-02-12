@@ -283,87 +283,105 @@ function convertBigI64(bigI64) {
  */
 function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateToMillisecond = false) {
   let offset = 8;
-
-  const readAtomByKType = {
-    // boolean
-    255: () => buffer[offset++] === 1,
-    254: () => { const guid = buffer.subarray(offset, offset + 16).toString('hex'); offset += 16; return guid; },
-    252: () => buffer[offset++],
-    251: () => {
-      const i16 = buffer.readInt16LE(offset);
-      offset += 2;
-      return convertI16(i16);
-    },
-    // int 32
-    250: () => {
-      const i32 = buffer.readInt32LE(offset);
-      offset += 4;
-      return convertI32(i32);
-    },
-    249: (useBigInt) => {
-      const bigI64 = convertBigI64(buffer.readBigInt64LE(offset));
-      offset += 8;
-      return useBigInt ? bigI64 : Number(bigI64);
-    },
-    248: () => { const real = buffer.readFloatLE(offset); offset += 4; return real; },
-    247: () => { const float = buffer.readDoubleLE(offset); offset += 8; return float; },
-    246: () => String.fromCharCode(buffer[offset++]),
-    // symbol
-    245: () => {
-      const end = buffer.indexOf(0, offset);
-      const sym = buffer.subarray(offset, end).toString();
-      offset = end + 1;
-      return sym;
-    },
-    // timestamp
-    244: () => {
-      const ns = readAtomByKType[249](true);
-      if (typeof ns === 'bigint') {
-        const date = new Date(Number(ns / 1000000n) + MS_DIFF);
-        return includeNanosecond ? date.toISOString().slice(0, -1) + String(ns % 1000000n).padStart(6, '0') : date;
-      } else {
-        return includeNanosecond ? '' : null;
+  const readAtomByKType = (kType, useBigInt = false) => {
+    switch (kType) {
+      case 255:
+        // boolean
+        return buffer[offset++] === 1;
+      case 254: {
+        const guid = buffer.subarray(offset, offset + 16).toString('hex');
+        offset += 16;
+        return guid;
       }
-    },
-    243: () => {
-      const month = readAtomByKType[250]();
-      return intToTemporal(month, 243);
-    },
-    // date
-    242: () => {
-      const ms = MS_DIFF + readAtomByKType[250]() * MS_PER_DAY;
-      return dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
-    },
-    // datetime
-    241: () => {
-      const ms = MS_DIFF + readAtomByKType[247]() * MS_PER_DAY;
-      return dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
-    },
-    240: () => {
-      const ns = readAtomByKType[249](true);
-      return typeof ns === 'bigint' ? bigintToTimespan(ns) : null;
-    },
-    // minute
-    239: () => {
-      const minute = readAtomByKType[250]();
-      return intToTemporal(minute, 239);
-    },
-    // second
-    238: () => {
-      const second = readAtomByKType[250]();
-      return intToTemporal(second, 238);
-    },
-    // ms
-    237: () => {
-      const ms = readAtomByKType[250]();
-      return intToTemporal(ms, 237);
-    },
+      case 252:
+        // byte
+        return buffer[offset++];
+      case 251: {
+        // short
+        const i16 = buffer.readInt16LE(offset);
+        offset += 2;
+        return convertI16(i16);
+      }
+      // int 32
+      case 250: {
+        const i32 = buffer.readInt32LE(offset);
+        offset += 4;
+        return convertI32(i32);
+      }
+      case 249: {
+        const bigI64 = convertBigI64(buffer.readBigInt64LE(offset));
+        offset += 8;
+        return useBigInt ? bigI64 : Number(bigI64);
+      }
+      case 248: {
+        const real = buffer.readFloatLE(offset);
+        offset += 4;
+        return real;
+      }
+      case 247: {
+        const float = buffer.readDoubleLE(offset);
+        offset += 8;
+        return float;
+      }
+      case 246:
+        return String.fromCharCode(buffer[offset++]);
+      // symbol
+      case 245: {
+        const end = buffer.indexOf(0, offset);
+        const sym = buffer.subarray(offset, end).toString();
+        offset = end + 1;
+        return sym;
+      }
+      // timestamp
+      case 244: {
+        const ns = readAtomByKType(249, true);
+        if (typeof ns === 'bigint') {
+          const date = new Date(Number(ns / 1000000n) + MS_DIFF);
+          return includeNanosecond ? date.toISOString().slice(0, -1) + String(ns % 1000000n).padStart(6, '0') : date;
+        } else {
+          return includeNanosecond ? '' : null;
+        }
+      }
+      case 243: {
+        const month = readAtomByKType(250);
+        return intToTemporal(month, 243);
+      }
+      // date
+      case 242: {
+        const ms = MS_DIFF + readAtomByKType(250) * MS_PER_DAY;
+        return dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
+      }
+      // datetime
+      case 241: {
+        const ms = MS_DIFF + readAtomByKType(247) * MS_PER_DAY;
+        return dateToMillisecond ? ms : Number.isFinite(ms) ? new Date(ms) : null;
+      }
+      case 240: {
+        const ns = readAtomByKType(249, true);
+        return typeof ns === 'bigint' ? bigintToTimespan(ns) : null;
+      }
+      // minute
+      case 239: {
+        const minute = readAtomByKType(250);
+        return intToTemporal(minute, 239);
+      }
+      // second
+      case 238: {
+        const second = readAtomByKType(250);
+        return intToTemporal(second, 238);
+      }
+      // ms
+      case 237: {
+        const ms = readAtomByKType(250);
+        return intToTemporal(ms, 237);
+      }
+    }
   };
 
   const readArray = kType => {
     // skip attribute
     offset++;
-    const n = readAtomByKType[250]();
+    const n = readAtomByKType(250);
     const array = new Array(n);
 
     // array with dynamic length atom
@@ -374,7 +392,7 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
       return array;
     } else if (kType === 11) {
       for (i = 0; i < n; i++) {
-        array[i] = readAtomByKType[245]();
+        array[i] = readAtomByKType(245);
       }
       return array;
     }
@@ -496,10 +514,10 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
     // kType
     const kType = buffer[offset++];
     if (kType === 128) {
-      throw new Error(readAtomByKType[245]());
+      throw new Error(readAtomByKType(245));
     }
     if (237 <= kType && kType <= 255) {
-      return readAtomByKType[kType](useBigInt);
+      return readAtomByKType(kType, useBigInt);
     }
     if (0 <= kType && kType <= 19) {
       const array = readArray(kType);
@@ -564,9 +582,7 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
     }
 
     if (kType === 100) {
-      // skip namespace
-      readArray(245);
-      offset++;
+      offset += 2;
       return readArray(10);
     }
 
@@ -584,6 +600,13 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
       // iterator
       return K103[buffer[offset++]];
     }
+
+    if (kType === 104) {
+      // no attribute to skip, move back offset by 1
+      offset--;
+      return readArray(0);
+    }
+
     throw new Error('UNSUPPORTED_K_TYPE[read] - ' + kType);
   };
 

@@ -131,33 +131,35 @@ q.close(() => {
 
 Deserialization of long and timestamp can be controlled by QConnection arguments `useBigInt` and `includeNanosecond`.
 
-| k type    | argument          | javascript type | k null                           | infinity | -infinity |
-| --------- | ----------------- | --------------- | -------------------------------- | -------- | --------- |
-| boolean   |                   | Boolean         |                                  |          |           |
-| guid      |                   | String          | 00000000000000000000000000000000 |          |           |
-| byte      |                   | Number          |                                  |          |           |
-| short     |                   | Number          | NaN                              | Infinity | -Infinity |
-| int       |                   | Number          | NaN                              | Infinity | -Infinity |
-| long      |                   | Number          | NaN                              | Infinity | -Infinity |
-| long      | useBigInt         | BigInt          | NaN                              | Infinity | -Infinity |
-| real      |                   | Number          | NaN                              | Infinity | -Infinity |
-| float     |                   | Number          | NaN                              | Infinity | -Infinity |
-| char      |                   | String          | ' '                              |          |           |
-| symbol    |                   | String          | ''                               |          |           |
-| timestamp |                   | Date            | null                             | null     | null      |
-| timestamp | includeNanosecond | String          | ''                               | ''       | ''        |
-| month     |                   | String          | null                             | null     | null      |
-| date      |                   | Date            | null                             | null     | null      |
-| date      | dateToMillisecond | Number          | NaN                              | Infinity | -Infinity |
-| datetime  |                   | Date            | null                             | null     | null      |
-| datetime  | dateToMillisecond | Number          | NaN                              | Infinity | -Infinity |
-| timespan  |                   | String          | null                             | null     | null      |
-| minute    |                   | String          | null                             | null     | null      |
-| second    |                   | String          | null                             | null     | null      |
-| time      |                   | String          | null                             | null     | null      |
-| dict      |                   | Object          |                                  |          |           |
-| list      |                   | Array           |                                  |          |           |
-| table     |                   | Object          |                                  |          |           |
+| k type     | argument          | javascript type | k null                           | infinity | -infinity |
+| ---------- | ----------------- | --------------- | -------------------------------- | -------- | --------- |
+| boolean    |                   | Boolean         |                                  |          |           |
+| guid       |                   | String          | 00000000000000000000000000000000 |          |           |
+| byte       |                   | Number          |                                  |          |           |
+| short      |                   | Number          | NaN                              | Infinity | -Infinity |
+| int        |                   | Number          | NaN                              | Infinity | -Infinity |
+| long       |                   | Number          | NaN                              | Infinity | -Infinity |
+| long       | useBigInt         | BigInt          | NaN                              | Infinity | -Infinity |
+| real       |                   | Number          | NaN                              | Infinity | -Infinity |
+| float      |                   | Number          | NaN                              | Infinity | -Infinity |
+| char       |                   | String          | ' '                              |          |           |
+| symbol     |                   | String          | ''                               |          |           |
+| timestamp  |                   | Date            | null                             | null     | null      |
+| timestamp  | includeNanosecond | String          | ''                               | ''       | ''        |
+| month      |                   | String          | null                             | null     | null      |
+| date       |                   | Date            | null                             | null     | null      |
+| date       | dateToMillisecond | Number          | NaN                              | Infinity | -Infinity |
+| datetime   |                   | Date            | null                             | null     | null      |
+| datetime   | dateToMillisecond | Number          | NaN                              | Infinity | -Infinity |
+| timespan   |                   | String          | null                             | null     | null      |
+| minute     |                   | String          | null                             | null     | null      |
+| second     |                   | String          | null                             | null     | null      |
+| time       |                   | String          | null                             | null     | null      |
+| dict       |                   | Object          |                                  |          |           |
+| list       |                   | Array           |                                  |          |           |
+| table      |                   | Object          |                                  |          |           |
+| lambda     |                   | String          |                                  |          |           |
+| projection |                   | Array           |                                  |          |           |
 
 ### Serialization
 
