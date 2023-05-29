@@ -1,8 +1,8 @@
-import IPC from './ipc';
+import { Buffer } from 'buffer';
+import { EventEmitter } from 'events';
 import net from 'net';
 import tls from 'tls';
-import { EventEmitter } from 'events';
-import { Buffer } from 'buffer';
+import IPC from './ipc';
 
 export class QConnection extends EventEmitter {
   /**
