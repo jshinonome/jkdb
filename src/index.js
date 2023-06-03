@@ -15,6 +15,7 @@ export class QConnection extends EventEmitter {
  * @param  {boolean}   [socketArgs.useBigInt]
  * @param  {boolean}   [socketArgs.enableTLS]
  * @param  {boolean}   [socketArgs.socketTimeout]
+ * @param  {boolean}   [socketArgs.socketNoDelay]
  * @param  {boolean}   [socketArgs.includeNanosecond]
  * @param  {boolean}   [socketArgs.dateToMillisecond]
  */
