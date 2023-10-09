@@ -179,15 +179,18 @@ export class QConnection extends EventEmitter {
         obj = null;
         err = e;
       }
-      // response(2) msg
       if (this.msgBuffer.readUInt8(1) === 2) {
+        // response(2) msg
         this.callbacks.shift()(err, obj);
-      } else {
+      } else if (this.msgBuffer.readUInt8(1) === 0) {
+        // async msg(0), no need ack
         if (!err && Array.isArray(obj) && obj[0] === 'upd') {
           this.emit('upd', obj);
-        } else {
-          this.callbacks.shift()(err, obj);
         }
+      } else {
+        // disregard sync msg(1), as this is not a q process
+        // ack msg
+        this.socket.write(IPC.ACK);
       }
       if (this.msgOffset > this.msgBuffer.length) {
         const subBuf = buffer.subarray(buffer.length + this.msgBuffer.length - this.msgOffset);

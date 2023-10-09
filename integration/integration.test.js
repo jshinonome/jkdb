@@ -18,6 +18,34 @@ test('connect to kdb without credentials', done => {
   });
 });
 
+test('ack sync', done => {
+  qProcess.stdin.write('(first key .z.W)@".z.D";', () => {
+    q.sync('18', (_, res) => {
+      expect(res).toBe(18);
+      done();
+    });
+  });
+});
+
+test('ack async', done => {
+  qProcess.stdin.write('(neg first key .z.W)@".z.D";', () => {
+    q.sync('18', (_, res) => {
+      expect(res).toBe(18);
+      done();
+    });
+  });
+});
+
+test('query a deferred async API', done => {
+  q.connect(err => {
+    expect(err).toBe(null);
+    q.sync(['{-30!(::);-30!(.z.w;0b;`test)}', ''], (_, res) => {
+      expect('test').toStrictEqual('test');
+      done();
+    });
+  });
+});
+
 test('connect to kdb with wrong credentials', done => {
   q.connect(err => {
     expect(err).toBe(null);

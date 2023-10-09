@@ -925,4 +925,6 @@ function serialize(obj) {
   return buffer;
 }
 
-export default { deserialize, serialize };
+const ACK = Buffer.from('010200000a0000006500', 'hex');
+
+export default { deserialize, serialize, ACK };
