@@ -38,10 +38,12 @@ export class QConnection extends EventEmitter {
     this.enableTLS = socketArgs.enableTLS ?? false;
     this.includeNanosecond = socketArgs.includeNanosecond ?? false;
     this.dateToMillisecond = socketArgs.dateToMillisecond ?? false;
+    this.isConnected = false;
   }
 
   setSocket(socket) {
     this.socket = socket;
+    this.isConnected = true;
     this.socket.setNoDelay(this.socketNoDelay);
     this.socket.setTimeout(this.socketTimeout);
     this.socket.on('end', () => this.emit('end'));
@@ -72,6 +74,7 @@ export class QConnection extends EventEmitter {
           socket.on('close', () => {
             this.callbacks.forEach(cb => cb(new Error('LOST_CONNECTION'), null));
             this.callbacks = [];
+            this.isConnected = false;
           });
         } else {
           callback(new Error('UNSUPPORTED_KDB_VERSION<=2.5'));
@@ -93,6 +96,10 @@ export class QConnection extends EventEmitter {
    * @param {errorHandler} callback
    */
   connect(callback) {
+    // if already connected, do nothing
+    if (this.isConnected) {
+      return callback(null);
+    }
     if (this.user === '') {
       this.user = process.env.USER;
     }
@@ -131,6 +138,7 @@ export class QConnection extends EventEmitter {
   close(callback) {
     this.socket.once('close', () => { if (callback) callback(); });
     this.socket.end();
+    this.isConnected = false;
   }
 
   /**
