@@ -640,6 +640,8 @@ function getKType(x) {
     // float
     case 'number':
       return 247;
+    case 'bigint':
+      return 249;
     case 'boolean':
       return 255;
     case 'string':
@@ -666,6 +668,7 @@ function calcMsgLength(obj, kType = null) {
     case 244:
     case 246:
     case 247:
+    case 249:
     case 255:
       return 1 + SIZE_BY_K_TYPE[256 - kType];
     case 98: {
@@ -750,6 +753,11 @@ function serialize(obj) {
       // float
       case 247:
         buffer.writeDoubleLE(obj, offset);
+        offset += 8;
+        break;
+      // bigint
+      case 249:
+        buffer.writeBigInt64LE(obj, offset);
         offset += 8;
         break;
       // boolean

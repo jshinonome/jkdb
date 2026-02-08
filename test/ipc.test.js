@@ -196,6 +196,13 @@ test('deserialize/serialize float -infinite', () => {
   expect(s(obj)).toBe(msg);
 });
 
+test('deserialize/serialize bigint', () => {
+  const msg = '0100000011000000f90100000000000000';
+  const obj = 1n;
+  expect(d(msg)).toBe(Number(obj));
+  expect(s(obj)).toBe(msg);
+});
+
 test('deserialize/serialize float list', () => {
   const msg = '010000002e000000090004000000' +
     '0000000000c05840000000000000f87f000000000000f07f000000000000f0ff';
