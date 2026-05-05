@@ -1,6 +1,5 @@
 node_modules
 target
-pkg
 *.tgz
 local
 .vscode
