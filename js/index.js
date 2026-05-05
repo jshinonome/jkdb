@@ -1,24 +1,30 @@
+/**
+ * jkdb — kdb+/q interface powered by Rust/WASM.
+ *
+ * Connection logic in JS (net/tls sockets), codec in WASM.
+ */
 import { Buffer } from 'buffer';
 import { EventEmitter } from 'events';
 import net from 'net';
 import tls from 'tls';
-import IPC from './ipc';
+import { ipc_deserialize, ipc_serialize } from '../pkg/jkdb.js';
+
+const ACK = Buffer.from('010200000a0000006500', 'hex');
 
 export class QConnection extends EventEmitter {
   /**
- * @constructs socketArgs
- * @param  {Object}    socketArgs
- * @param  {string}    [socketArgs.host]
- * @param  {number}    socketArgs.port
- * @param  {string}    [socketArgs.user]
- * @param  {string}    [socketArgs.password]
- * @param  {boolean}   [socketArgs.useBigInt]
- * @param  {boolean}   [socketArgs.enableTLS]
- * @param  {boolean}   [socketArgs.socketTimeout]
- * @param  {boolean}   [socketArgs.socketNoDelay]
- * @param  {boolean}   [socketArgs.includeNanosecond]
- * @param  {boolean}   [socketArgs.dateToMillisecond]
- */
+   * @param {Object} socketArgs
+   * @param {string}  [socketArgs.host]
+   * @param {number}  socketArgs.port
+   * @param {string}  [socketArgs.user]
+   * @param {string}  [socketArgs.password]
+   * @param {boolean} [socketArgs.useBigInt]
+   * @param {boolean} [socketArgs.enableTLS]
+   * @param {number}  [socketArgs.socketTimeout]
+   * @param {boolean} [socketArgs.socketNoDelay]
+   * @param {boolean} [socketArgs.includeNanosecond]
+   * @param {boolean} [socketArgs.dateToMillisecond]
+   */
   constructor(socketArgs) {
     super();
     this.socketArgs = socketArgs;
@@ -86,14 +92,7 @@ export class QConnection extends EventEmitter {
   }
 
   /**
-   *
-   * @callback errorHandler
-   * @param {Error} err
-   */
-
-  /**
-   *
-   * @param {errorHandler} callback
+   * @param {function(Error|null)} callback
    */
   connect(callback) {
     // if already connected, do nothing
@@ -132,7 +131,6 @@ export class QConnection extends EventEmitter {
   }
 
   /**
-   *
    * @param {function()} [callback]
    */
   close(callback) {
@@ -142,7 +140,6 @@ export class QConnection extends EventEmitter {
   }
 
   /**
-   *
    * @param {Buffer} buffer
    */
   incomingMsgHandler(buffer) {
@@ -181,7 +178,12 @@ export class QConnection extends EventEmitter {
     while (this.msgOffset > 0 && this.msgOffset >= this.msgBuffer.length) {
       let obj, err;
       try {
-        obj = IPC.deserialize(this.msgBuffer, this.useBigInt, this.includeNanosecond, this.dateToMillisecond);
+        obj = ipc_deserialize(
+          new Uint8Array(this.msgBuffer),
+          this.useBigInt,
+          this.includeNanosecond,
+          this.dateToMillisecond,
+        );
         err = null;
       } catch (e) {
         obj = null;
@@ -198,7 +200,7 @@ export class QConnection extends EventEmitter {
       } else {
         // disregard sync msg(1), as this is not a q process
         // ack msg
-        this.socket.write(IPC.ACK);
+        this.socket.write(ACK);
       }
       if (this.msgOffset > this.msgBuffer.length) {
         const subBuf = buffer.subarray(buffer.length + this.msgBuffer.length - this.msgOffset);
@@ -224,16 +226,8 @@ export class QConnection extends EventEmitter {
   }
 
   /**
-   *
-   * @callback queryHandler
-   * @param {Error} err
-   * @param {any} res
-   */
-
-  /**
-   *
    * @param {string|Array} param
-   * @param {queryHandler} callback
+   * @param {function(Error, any)} callback
    */
   sync(param, callback) {
     if (typeof callback !== 'function') {
@@ -244,7 +238,7 @@ export class QConnection extends EventEmitter {
     if (!param || (Array.isArray(param) && param.length === 0)) {
       this.callbacks.push(callback);
     } else {
-      const buffer = IPC.serialize(param);
+      const buffer = Buffer.from(ipc_serialize(param));
       // sync(1) msg
       buffer.writeUInt8(0x1, 1);
       this.socket.write(buffer, () => this.callbacks.push(callback));
@@ -252,12 +246,11 @@ export class QConnection extends EventEmitter {
   }
 
   /**
-   *
    * @param {string|Array} param
-   * @param {errorHandler} [callback]
+   * @param {function(Error)} [callback]
    */
   asyn(param, callback) {
-    const buffer = IPC.serialize(param);
+    const buffer = Buffer.from(ipc_serialize(param));
     // async(0) msg
     buffer.writeUInt8(0x1, 0);
     if (callback) {
@@ -267,3 +260,9 @@ export class QConnection extends EventEmitter {
     }
   }
 }
+
+// Re-export IPC functions for direct use
+export const IPC = {
+  deserialize: ipc_deserialize,
+  serialize: ipc_serialize,
+};

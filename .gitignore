@@ -1,11 +1,9 @@
-.vscode
-*.d.ts
-*.tgz
-jkdb.min.js
-local
 node_modules
+target
+pkg
+*.tgz
+local
+.vscode
 package-lock.json
-package-lock.json
-yarn.lock
-test.js
 pnpm-lock.yaml
+yarn.lock

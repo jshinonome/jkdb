@@ -2,12 +2,20 @@
 
 [![](https://img.shields.io/npm/dm/jkdb?labelColor=4a148c&color=9c27b0&style=flat)](https://www.npmjs.com/package/jkdb)
 
-A zero dependency javascript Node.js package to interface with kdb+/q (v2.6+).
+A Rust/WASM powered Node.js package to interface with kdb+/q (v2.6+).
 
 ## Installation
 
 ```
-npm install --save-dev jkdb
+npm install jkdb
+```
+
+### Building from source
+
+Requires [Rust](https://rustup.rs/) and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/):
+
+```bash
+npm run build
 ```
 
 ## Quick Start
@@ -15,7 +23,7 @@ npm install --save-dev jkdb
 ### Connect to a q Process
 
 ```javascript
-const { QConnection } = require("jkdb");
+import { QConnection } from "jkdb";
 const q = new QConnection({ port: 1800 });
 q.connect((err) => {
   if (err) throw err;
@@ -27,24 +35,22 @@ q.connect((err) => {
 ### Connect to a TLS-protected q Process
 
 ```javascript
-const { QConnection } = require("jkdb");
-const q = new QConnection({ port: 1800, useTLS: true });
+import { QConnection } from "jkdb";
+const q = new QConnection({ port: 1800, enableTLS: true });
 q.connect((err) => {
   if (err) throw err;
   console.log("connected");
-  // send query from here
 });
 ```
 
 ### Connect to a q Process with Credentials
 
 ```javascript
-const { QConnection } = require("jkdb");
+import { QConnection } from "jkdb";
 const q = new QConnection({ port: 1800, user: "user", password: "password" });
 q.connect((err) => {
   if (err) throw err;
   console.log("connected");
-  // send query from here
 });
 ```
 
@@ -125,11 +131,43 @@ q.close(() => {
 });
 ```
 
-## Date Types
+### Direct IPC Usage
+
+Use the low-level IPC codec directly:
+
+```javascript
+import { IPC } from "jkdb";
+
+// Deserialize a kdb+ IPC message
+const result = IPC.deserialize(buffer);
+
+// With options
+const result2 = IPC.deserialize(buffer, true, false, false);
+//                                       ^      ^      ^
+//                                  useBigInt  nano  dateMs
+
+// Serialize a JS value to kdb+ IPC binary
+const bytes = IPC.serialize({ sym: "8306.T", price: 668.2 });
+```
+
+## Connection Options
+
+| Option             | Type    | Default     | Description                                  |
+| ------------------ | ------- | ----------- | -------------------------------------------- |
+| host               | string  | 'localhost' | kdb+ server hostname                         |
+| port               | number  | —           | kdb+ server port (**required**)              |
+| user               | string  | ''          | Username for authentication                  |
+| password           | string  | ''          | Password for authentication                  |
+| useBigInt          | boolean | false       | Return longs as BigInt                       |
+| enableTLS          | boolean | false       | Use TLS connection                           |
+| socketTimeout      | number  | 0           | Socket timeout in milliseconds               |
+| socketNoDelay      | boolean | true        | Disable Nagle's algorithm                    |
+| includeNanosecond  | boolean | false       | Timestamps as nanosecond-precision strings   |
+| dateToMillisecond  | boolean | false       | Dates/datetimes as millisecond numbers       |
+
+## Data Types
 
 ### Deserialization
-
-Deserialization of long and timestamp can be controlled by QConnection arguments `useBigInt` and `includeNanosecond`.
 
 | k type     | argument          | javascript type | k null                           | infinity | -infinity |
 | ---------- | ----------------- | --------------- | -------------------------------- | -------- | --------- |

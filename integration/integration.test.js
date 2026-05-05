@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { QConnection } from '../src/index';
+import { QConnection } from '../js/index.js';
 
 const qProcess = spawn('q', ['-p', '1999']);
 
