@@ -34,7 +34,6 @@ export class QConnection extends EventEmitter {
     this.socketTimeout = socketArgs.socketTimeout ?? 0;
     this.socketNoDelay = socketArgs.socketNoDelay ?? true;
     this.msgBuffer = Buffer.alloc(0);
-    this.msgOffset = 0;
     this.enableTLS = socketArgs.enableTLS ?? false;
     this.includeNanosecond = socketArgs.includeNanosecond ?? false;
     this.dateToMillisecond = socketArgs.dateToMillisecond ?? false;
@@ -106,20 +105,22 @@ export class QConnection extends EventEmitter {
     if (this.socket) {
       this.socket.end();
     }
+    let called = false;
+    const done = (err) => { if (!called) { called = true; callback(err); } };
     let socket;
     const connectListener = () => {
       // won't hit connection refused, remove error listener
       socket.removeAllListeners('error');
       socket.once('close', () => {
         socket.end();
-        callback(new Error('ERR_CONNECTION_CLOSED - Wrong Credentials?'));
+        done(new Error('ERR_CONNECTION_CLOSED - Wrong Credentials?'));
       });
       // connection reset by peer
       socket.once('error', err => {
         socket.end();
-        callback(err);
+        done(err);
       });
-      this.auth(socket, callback);
+      this.auth(socket, done);
     };
 
     if (this.enableTLS) {
@@ -128,7 +129,7 @@ export class QConnection extends EventEmitter {
       socket = net.connect(this.port, this.host, connectListener);
     }
     // connection refused
-    socket.once('error', err => callback(err));
+    socket.once('error', err => done(err));
   }
 
   /**
@@ -136,6 +137,10 @@ export class QConnection extends EventEmitter {
    * @param {function()} [callback]
    */
   close(callback) {
+    if (!this.socket) {
+      if (callback) callback();
+      return;
+    }
     this.socket.once('close', () => { if (callback) callback(); });
     this.socket.end();
     this.isConnected = false;
@@ -146,51 +151,31 @@ export class QConnection extends EventEmitter {
    * @param {Buffer} buffer
    */
   incomingMsgHandler(buffer) {
-    if (this.msgBuffer.length > 8) {
-      buffer.copy(this.msgBuffer, this.msgOffset);
-      this.msgOffset += buffer.length;
-    } else if (this.msgBuffer.length === 0 && buffer.length >= 8) {
-      const length = buffer.readUInt32LE(4);
-      if (length > buffer.length) {
-        this.msgBuffer = Buffer.alloc(length);
-        buffer.copy(this.msgBuffer);
-        this.msgOffset = buffer.length;
-        return;
-      } else {
-        this.msgBuffer = buffer.subarray(0, length);
-        this.msgOffset = buffer.length;
-      }
-    } else if (this.msgBuffer.length + buffer.length >= 8) {
-      const buf = Buffer.alloc(8);
-      this.msgBuffer.copy(buf);
-      buffer.copy(buf, this.msgBuffer.length);
-      const length = buf.readUInt32LE(4);
-      this.msgBuffer = Buffer.alloc(length);
-      buf.copy(this.msgBuffer);
-      buffer.copy(this.msgBuffer, this.msgBuffer.length + buffer.length - 8);
-      this.msgOffset = this.msgBuffer.length + buffer.length;
-    } else {
-      // overall length < 8
-      const buf = Buffer.alloc(this.msgBuffer.length + buffer.length);
-      this.msgBuffer.copy(buf);
-      buffer.copy(buf, this.msgBuffer.length);
-      this.msgBuffer = buf;
-      this.msgOffset = 0;
-    }
+    this.msgBuffer = this.msgBuffer.length > 0
+      ? Buffer.concat([this.msgBuffer, buffer])
+      : buffer;
 
-    while (this.msgOffset > 0 && this.msgOffset >= this.msgBuffer.length) {
+    while (this.msgBuffer.length >= 8) {
+      const msgLen = this.msgBuffer.readUInt32LE(4);
+      if (msgLen > this.msgBuffer.length) break;
+
+      const msg = this.msgBuffer.subarray(0, msgLen);
+      this.msgBuffer = this.msgBuffer.subarray(msgLen);
+
       let obj, err;
       try {
-        obj = IPC.deserialize(this.msgBuffer, this.useBigInt, this.includeNanosecond, this.dateToMillisecond);
+        obj = IPC.deserialize(msg, this.useBigInt, this.includeNanosecond, this.dateToMillisecond);
         err = null;
       } catch (e) {
         obj = null;
         err = e;
       }
-      if (this.msgBuffer.readUInt8(1) === 2) {
+
+      const msgType = msg.readUInt8(1);
+      if (msgType === 2) {
         // response(2) msg
         this.callbacks.shift()(err, obj);
-      } else if (this.msgBuffer.readUInt8(1) === 0) {
+      } else if (msgType === 0) {
         // async msg(0), no need ack
         if (!err && Array.isArray(obj) && obj[0] === 'upd') {
           this.emit('upd', obj);
@@ -199,26 +184,6 @@ export class QConnection extends EventEmitter {
         // disregard sync msg(1), as this is not a q process
         // ack msg
         this.socket.write(IPC.ACK);
-      }
-      if (this.msgOffset > this.msgBuffer.length) {
-        const subBuf = buffer.subarray(buffer.length + this.msgBuffer.length - this.msgOffset);
-        if (subBuf.length >= 8) {
-          const length = subBuf.readUInt32LE(4);
-          if (length > subBuf.length) {
-            const buf = Buffer.alloc(length);
-            subBuf.copy(buf);
-            this.msgBuffer = buf;
-          } else {
-            this.msgBuffer = subBuf;
-          }
-          this.msgOffset = subBuf.length;
-        } else {
-          this.msgBuffer = subBuf;
-          this.msgOffset = 0;
-        }
-      } else {
-        this.msgBuffer = Buffer.alloc(0);
-        this.msgOffset = 0;
       }
     }
   }
@@ -238,6 +203,9 @@ export class QConnection extends EventEmitter {
   sync(param, callback) {
     if (typeof callback !== 'function') {
       throw new Error('Expecting a callback function as last param');
+    }
+    if (!this.isConnected) {
+      return callback(new Error('NOT_CONNECTED'), null);
     }
 
     // null or empty list of param
@@ -259,11 +227,37 @@ export class QConnection extends EventEmitter {
   asyn(param, callback) {
     const buffer = IPC.serialize(param);
     // async(0) msg
-    buffer.writeUInt8(0x1, 0);
+    buffer.writeUInt8(0x0, 1);
     if (callback) {
       this.socket.write(buffer, callback);
     } else {
       this.socket.write(buffer);
     }
+  }
+
+  /**
+   * @returns {Promise<void>}
+   */
+  connectAsync() {
+    return new Promise((resolve, reject) =>
+      this.connect(err => err ? reject(err) : resolve())
+    );
+  }
+
+  /**
+   * @param {string|Array} param
+   * @returns {Promise<any>}
+   */
+  syncAsync(param) {
+    return new Promise((resolve, reject) =>
+      this.sync(param, (err, res) => err ? reject(err) : resolve(res))
+    );
+  }
+
+  /**
+   * @returns {Promise<void>}
+   */
+  closeAsync() {
+    return new Promise(resolve => this.close(resolve));
   }
 }

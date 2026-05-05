@@ -28,7 +28,7 @@ q.connect((err) => {
 
 ```javascript
 const { QConnection } = require("jkdb");
-const q = new QConnection({ port: 1800, useTLS: true });
+const q = new QConnection({ port: 1800, enableTLS: true });
 q.connect((err) => {
   if (err) throw err;
   console.log("connected");
@@ -108,8 +108,8 @@ q.asyn(["show", 99], (err) => {
 ### Subscribe
 
 ```javascript
-q.on("upd", (table, data) => {
-  console.log(table, data);
+q.on("upd", (msg) => {
+  console.log(msg);
 });
 
 q.sync(".u.sub[`trade;`7203.T]", (err, _res) => {
@@ -123,6 +123,23 @@ q.sync(".u.sub[`trade;`7203.T]", (err, _res) => {
 q.close(() => {
   console.log("closed");
 });
+```
+
+## Promise API
+
+All connection methods have Promise-based variants for use with async/await.
+
+### Connect, Query and Close
+
+```javascript
+const { QConnection } = require("jkdb");
+const q = new QConnection({ port: 1800 });
+
+await q.connectAsync();
+const res = await q.syncAsync("(+/) til 10");
+console.log("result: ", res);
+// result: 45
+await q.closeAsync();
 ```
 
 ## Date Types

@@ -181,7 +181,7 @@ function decompress(cMsg) {
  * @returns {string|null}
  */
 function bigintToTimespan(ns) {
-  if (!Number.isNaN(ns)) {
+  if (typeof ns === 'bigint') {
     const sign = ns < 0n ? '-' : '';
     if (ns < 0n) {
       ns = -1n * ns;
@@ -394,17 +394,17 @@ function deserialize(buffer, useBigInt = false, includeNanosecond = false, dateT
 
     // array with dynamic length atom
     if (kType === 0) {
-      for (i = 0; i < n; i++) {
+      for (let i = 0; i < n; i++) {
         array[i] = read();
       }
       return array;
     } else if (kType === 11) {
-      for (i = 0; i < n; i++) {
+      for (let i = 0; i < n; i++) {
         array[i] = readAtomByKType(245);
       }
       return array;
     } else if (kType === 2) {
-      for (i = 0; i < n; i++) {
+      for (let i = 0; i < n; i++) {
         array[i] = buffer.subarray(offset + i * 16, offset + (i + 1) * 16).toString('hex');
       }
       offset += 16 * n;
@@ -772,7 +772,7 @@ function serialize(obj) {
         const column = meta.c;
         // write column names (symbols)
         buffer[offset++] = 11;
-        writeArray(Object.keys(obj), 11);
+        writeArray(column, 11);
         buffer[offset++] = 0;
         buffer[offset++] = 0;
         buffer.writeUInt32LE(column.length, offset);
@@ -842,35 +842,30 @@ function serialize(obj) {
       // int
       case 6:
         obj.forEach(i => {
-          if (i) {
-            if (i === Infinity) {
-              buffer.writeInt32LE(INT_POSITIVE_INFINITY, offset);
-            } else if (i === -Infinity) {
-              buffer.writeInt32LE(INT_NEGATIVE_INFINITY, offset);
-            } else {
-              buffer.writeInt32LE(i, offset);
-            }
-            offset += 4;
-          } else {
+          if (i === null || i === undefined || Number.isNaN(i)) {
             buffer.writeInt32LE(INT_NULL, offset);
-            offset += 4;
+          } else if (i === Infinity) {
+            buffer.writeInt32LE(INT_POSITIVE_INFINITY, offset);
+          } else if (i === -Infinity) {
+            buffer.writeInt32LE(INT_NEGATIVE_INFINITY, offset);
+          } else {
+            buffer.writeInt32LE(i, offset);
           }
+          offset += 4;
         });
         break;
       // long
       case 7:
         obj.forEach(l => {
-          if (l) {
-            if (l === Infinity) {
-              buffer.writeBigInt64LE(LONG_POSITIVE_INFINITY, offset);
-            } else if (l === -Infinity) {
-              buffer.writeBigInt64LE(LONG_NEGATIVE_INFINITY, offset);
-            } else {
-              const bigI64 = typeof l === 'bigint' ? l : BigInt(l);
-              buffer.writeBigInt64LE(bigI64, offset);
-            }
-          } else {
+          if (l === null || l === undefined || Number.isNaN(l)) {
             buffer.writeBigInt64LE(LONG_NULL, offset);
+          } else if (l === Infinity) {
+            buffer.writeBigInt64LE(LONG_POSITIVE_INFINITY, offset);
+          } else if (l === -Infinity) {
+            buffer.writeBigInt64LE(LONG_NEGATIVE_INFINITY, offset);
+          } else {
+            const bigI64 = typeof l === 'bigint' ? l : BigInt(l);
+            buffer.writeBigInt64LE(bigI64, offset);
           }
           offset += 8;
         });
