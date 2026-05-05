@@ -34,7 +34,7 @@
     "test:rust": "cargo test",
     "test": "cargo test && jest --testPathPatterns=wasm_ipc",
     "integration": "jest --testPathPatterns=integration",
-    "build": "cargo test && wasm-pack build --target nodejs --out-dir pkg",
+    "build": "cargo test && wasm-pack build --target nodejs --out-dir pkg && rm -f pkg/.gitignore",
     "pack": "npm run build && npm pack"
   },
   "author": "Jo Shinonome",

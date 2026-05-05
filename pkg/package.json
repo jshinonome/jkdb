@@ -1,0 +1,17 @@
+{
+  "name": "jkdb",
+  "description": "JavaScript/WASM interface for kdb+/q",
+  "version": "2.0.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jshinonome/jkdb"
+  },
+  "files": [
+    "jkdb_bg.wasm",
+    "jkdb.js",
+    "jkdb.d.ts"
+  ],
+  "main": "jkdb.js",
+  "types": "jkdb.d.ts"
+}
