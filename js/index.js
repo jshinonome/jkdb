@@ -39,8 +39,7 @@ export class QConnection extends EventEmitter {
     this.callbacks = [];
     this.socketTimeout = socketArgs.socketTimeout ?? 0;
     this.socketNoDelay = socketArgs.socketNoDelay ?? true;
-    this.msgBuffer = Buffer.alloc(0);
-    this.msgOffset = 0;
+    this.recvBuf = Buffer.alloc(0);
     this.enableTLS = socketArgs.enableTLS ?? false;
     this.includeNanosecond = socketArgs.includeNanosecond ?? false;
     this.dateToMillisecond = socketArgs.dateToMillisecond ?? false;
@@ -140,46 +139,30 @@ export class QConnection extends EventEmitter {
   }
 
   /**
-   * @param {Buffer} buffer
+   * Handle incoming TCP data.
+   *
+   * Accumulates chunks into recvBuf, then extracts and dispatches
+   * every complete IPC message (8-byte header + payload).
+   *
+   * @param {Buffer} chunk
    */
-  incomingMsgHandler(buffer) {
-    if (this.msgBuffer.length > 8) {
-      buffer.copy(this.msgBuffer, this.msgOffset);
-      this.msgOffset += buffer.length;
-    } else if (this.msgBuffer.length === 0 && buffer.length >= 8) {
-      const length = buffer.readUInt32LE(4);
-      if (length > buffer.length) {
-        this.msgBuffer = Buffer.alloc(length);
-        buffer.copy(this.msgBuffer);
-        this.msgOffset = buffer.length;
-        return;
-      } else {
-        this.msgBuffer = buffer.subarray(0, length);
-        this.msgOffset = buffer.length;
-      }
-    } else if (this.msgBuffer.length + buffer.length >= 8) {
-      const buf = Buffer.alloc(8);
-      this.msgBuffer.copy(buf);
-      buffer.copy(buf, this.msgBuffer.length);
-      const length = buf.readUInt32LE(4);
-      this.msgBuffer = Buffer.alloc(length);
-      buf.copy(this.msgBuffer);
-      buffer.copy(this.msgBuffer, this.msgBuffer.length + buffer.length - 8);
-      this.msgOffset = this.msgBuffer.length + buffer.length;
-    } else {
-      // overall length < 8
-      const buf = Buffer.alloc(this.msgBuffer.length + buffer.length);
-      this.msgBuffer.copy(buf);
-      buffer.copy(buf, this.msgBuffer.length);
-      this.msgBuffer = buf;
-      this.msgOffset = 0;
-    }
+  incomingMsgHandler(chunk) {
+    this.recvBuf = this.recvBuf.length === 0
+      ? chunk
+      : Buffer.concat([this.recvBuf, chunk]);
 
-    while (this.msgOffset > 0 && this.msgOffset >= this.msgBuffer.length) {
+    // Process all complete messages in the buffer
+    while (this.recvBuf.length >= 8) {
+      const msgLen = this.recvBuf.readUInt32LE(4);
+      if (this.recvBuf.length < msgLen) break; // wait for more data
+
+      const msg = this.recvBuf.subarray(0, msgLen);
+      this.recvBuf = this.recvBuf.subarray(msgLen);
+
       let obj, err;
       try {
         obj = ipc_deserialize(
-          new Uint8Array(this.msgBuffer),
+          new Uint8Array(msg),
           this.useBigInt,
           this.includeNanosecond,
           this.dateToMillisecond,
@@ -189,38 +172,19 @@ export class QConnection extends EventEmitter {
         obj = null;
         err = e;
       }
-      if (this.msgBuffer.readUInt8(1) === 2) {
-        // response(2) msg
+
+      const msgType = msg[1];
+      if (msgType === 2) {
+        // response msg
         this.callbacks.shift()(err, obj);
-      } else if (this.msgBuffer.readUInt8(1) === 0) {
-        // async msg(0), no need ack
+      } else if (msgType === 0) {
+        // async msg, no ack needed
         if (!err && Array.isArray(obj) && obj[0] === 'upd') {
           this.emit('upd', obj);
         }
       } else {
-        // disregard sync msg(1), as this is not a q process
-        // ack msg
+        // sync msg from server — ack it
         this.socket.write(ACK);
-      }
-      if (this.msgOffset > this.msgBuffer.length) {
-        const subBuf = buffer.subarray(buffer.length + this.msgBuffer.length - this.msgOffset);
-        if (subBuf.length >= 8) {
-          const length = subBuf.readUInt32LE(4);
-          if (length > subBuf.length) {
-            const buf = Buffer.alloc(length);
-            subBuf.copy(buf);
-            this.msgBuffer = buf;
-          } else {
-            this.msgBuffer = subBuf;
-          }
-          this.msgOffset = subBuf.length;
-        } else {
-          this.msgBuffer = subBuf;
-          this.msgOffset = 0;
-        }
-      } else {
-        this.msgBuffer = Buffer.alloc(0);
-        this.msgOffset = 0;
       }
     }
   }
